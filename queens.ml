@@ -1,4 +1,4 @@
-effect Select : 'a list -> 'a
+exception%effect Select : 'a list -> 'a
 
 let rec filter p = function
   | [] -> []
@@ -27,11 +27,11 @@ let find_solution n =
         place (x+1) ((x, y) :: qs)
     in place 1 []
   with
-  | effect (Select lst) k ->
+  | [%effect? (Select lst), k] ->
       let rec loop = function
         | [] -> None
         | x::xs ->
-            match continue (Obj.clone_continuation k) x with
+            match continue (k (* XXX: clone_continuation not suppoerted *)) x with
             | None -> loop xs
             | Some x -> Some x
       in loop lst

@@ -29,9 +29,9 @@ module M : S = struct
  }
 
  let new_prompt (type a) () : a prompt =
-   let module M = struct effect Prompt : (('b,a) subcont -> a) -> 'b end in
+   let module M = struct exception%effect Prompt : (('b,a) subcont -> a) -> 'b end in
    let take f  = perform (M.Prompt f) in
-   let push f  = match f () with  v -> v | effect (M.Prompt f) k -> f k in
+   let push f  = match f () with  v -> v | [%effect? (M.Prompt f), k] -> f k in
    { take; push }
 
  let push_prompt prompt = prompt.push

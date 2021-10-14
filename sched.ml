@@ -1,5 +1,5 @@
-effect Fork  : (unit -> unit) -> unit
-effect Yield : unit
+exception%effect Fork  : (unit -> unit) -> unit
+exception%effect Yield : unit
 
 let fork f = perform (Fork f)
 let yield () = perform Yield
@@ -19,9 +19,9 @@ let run main =
     | exception e ->
         ( print_string (Printexc.to_string e);
           dequeue () )
-    | effect Yield k ->
+    | [%effect? Yield, k] ->
         ( enqueue k; dequeue () )
-    | effect (Fork f) k ->
+    | [%effect? (Fork f), k] ->
         ( enqueue k; spawn f )
   in
   spawn main

@@ -4,13 +4,13 @@
  * continuation within an outer multi-shot context causes runtime error.
  *)
 
-effect Foo : unit
-effect Bar : unit
+exception%effect Foo : unit
+exception%effect Bar : unit
 
 let _ =
   try begin
     try perform Foo
-    with effect Foo k -> (* This continuation is resumed twice *)
+    with [%effect? Foo, k] -> (* This continuation is resumed twice *)
       continue k (perform Bar)
-  end with effect Bar k ->
-    continue (Obj.clone_continuation k) (); continue k ()
+  end with [%effect? Bar, k] ->
+    continue (k (* XXX: continuation cloning currently unsupported *)) (); continue k ()

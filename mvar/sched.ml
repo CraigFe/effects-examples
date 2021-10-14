@@ -1,9 +1,9 @@
-effect Fork    : (unit -> unit) -> unit
-effect Yield   : unit
+exception%effect Fork    : (unit -> unit) -> unit
+exception%effect Yield   : unit
 
 type 'a cont = ('a,unit) continuation
-effect Suspend : ('a cont -> unit) -> 'a
-effect Resume  : ('a cont * 'a) -> unit
+exception%effect Suspend : ('a cont -> unit) -> 'a
+exception%effect Resume  : ('a cont * 'a) -> unit
 
 let run main =
   let run_q = Queue.create () in
@@ -17,10 +17,10 @@ let run main =
   let rec spawn f =
     match f () with
     | () -> dequeue ()
-    | effect Yield k -> enqueue k (); dequeue ()
-    | effect (Fork f) k -> enqueue k (); spawn f
-    | effect (Suspend f) k -> f k; dequeue ()
-    | effect (Resume (k', v)) k ->
+    | [%effect? Yield, k] -> enqueue k (); dequeue ()
+    | [%effect? (Fork f), k] -> enqueue k (); spawn f
+    | [%effect? (Suspend f), k] -> f k; dequeue ()
+    | [%effect? (Resume (k', v)), k] ->
         enqueue k' v; ignore (continue k ())
   in
   spawn main

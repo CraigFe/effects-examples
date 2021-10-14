@@ -16,10 +16,10 @@ sig
   val reflect : 'a M.t -> 'a
 end =
 struct
-  effect E : 'a M.t -> 'a
+  exception%effect E : 'a M.t -> 'a
   let reify f = match f () with
       x -> M.return x
-    | effect (E m) k -> M.bind m (continue k)
+    | [%effect? (E m), k] -> M.bind m (continue k)
   let reflect m = perform (E m)
 end
 

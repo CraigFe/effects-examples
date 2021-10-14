@@ -14,19 +14,19 @@ end = struct
 
   let mk v = {v; d = 0.0}
 
-  effect Add : t * t -> t
-  effect Mult : t * t -> t
+  exception%effect Add : t * t -> t
+  exception%effect Mult : t * t -> t
 
   let run f =
     ignore (match f () with
     | r -> r.d <- 1.0; r
-    | effect (Add(a,b)) k ->
+    | [%effect? (Add(a,b)), k] ->
         let x = {v = a.v +. b.v; d = 0.0} in
         ignore (continue k x);
         a.d <- a.d +. x.d;
         b.d <- b.d +. x.d;
         x
-    | effect (Mult(a,b)) k ->
+    | [%effect? (Mult(a,b)), k] ->
         let x = {v = a.v *. b.v; d = 0.0} in
         ignore (continue k x);
         a.d <- a.d +. (b.v *. x.d);

@@ -2,10 +2,10 @@
     The example is adapted from Kammar et al. (2013) **)
 
 (* We specialise our pipes to work only with integers *)
-effect Await : int
+exception%effect Await : int
 let await () = perform Await
 
-effect Yield : int -> unit
+exception%effect Yield : int -> unit
 let yield s = perform (Yield s)
 
 type prod = Prod of (unit -> (cons -> unit))
@@ -17,7 +17,7 @@ let flip f = fun y x -> f x y
 let up m =
   match m () with
   | v -> fun _ -> v
-  | effect (Yield s) k ->
+  | [%effect? (Yield s), k] ->
      fun (Cons cons) ->
        cons s (Prod (fun () -> continue k ()))
 
@@ -29,7 +29,7 @@ let up = flip up
 let down m =
   match m () with
   | v -> fun _ -> v
-  | effect Await k ->
+  | [%effect? Await, k] ->
      fun (Prod prod) ->
        prod () (Cons (fun s -> continue k s))
 

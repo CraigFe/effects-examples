@@ -51,13 +51,13 @@ module Tree : TREE = struct
 
   (* val to_gen : 'a t -> (unit -> 'a option) *)
   let to_gen (type a) (t : a t) =
-    let module M = struct effect Next : a -> unit end in
+    let module M = struct exception%effect Next : a -> unit end in
     let open M in
     let rec step = ref (fun () ->
       try
         iter (fun x -> perform (Next x)) t;
         None
-      with effect (Next v) k ->
+      with [%effect? (Next v), k] ->
         step := (fun () -> continue k ());
         Some v)
     in

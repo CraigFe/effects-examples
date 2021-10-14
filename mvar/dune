@@ -1,4 +1,6 @@
 (executables
  (names chameneos chameneos_monad chameneos_lwt MVar_test chameneos_systhr)
- (libraries threads lwt lwt.unix)
- (modules sched MVar sched_monad MVar_monad chameneos chameneos_monad chameneos_lwt MVar_test chameneos_systhr))
+ (libraries threads lwt lwt.unix import)
+ (modules sched MVar sched_monad MVar_monad chameneos chameneos_monad chameneos_lwt MVar_test chameneos_systhr)
+ (preprocess (pps ppx_effects))
+ (flags (:standard -open Import)))

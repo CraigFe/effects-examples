@@ -22,7 +22,7 @@
  * Fatal error: exception Unhandled
  *)
 
-effect E : unit
+exception%effect E : unit
 
 let printf = Printf.printf
 
@@ -40,7 +40,7 @@ let _ =
     printf "[Caml] Call caml_to_c\n%!";
     caml_to_c ();
     printf "[Caml] Return from caml_to_c\n%!"
-  with effect E k ->
+  with [%effect? E, k] ->
     printf "[Caml] Handle effect E. Continuing..\n%!";
     continue k ()
 

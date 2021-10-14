@@ -1,4 +1,6 @@
 (executables
  (names echo)
- (libraries unix)
- (modules aio echo))
+ (libraries unix import)
+ (modules aio echo)
+ (preprocess (pps ppx_effects))
+ (flags (:standard -open Import)))

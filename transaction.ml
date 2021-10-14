@@ -13,14 +13,14 @@ end
 module Txn : TXN = struct
   type 'a t = 'a ref
 
-  effect Update : 'a t * 'a -> unit
+  exception%effect Update : 'a t * 'a -> unit
 
   let atomically f =
     let comp =
       match f () with
       | x -> (fun _ -> x)
       | exception e -> (fun rb -> rb (); raise e)
-      | effect (Update (r,v)) k -> (fun rb ->
+      | [%effect? (Update (r,v)), k] -> (fun rb ->
           let old_v = !r in
           r := v;
           continue k () (fun () -> r := old_v; rb ()))

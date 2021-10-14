@@ -14,12 +14,12 @@ module State : STATE = struct
 
   module type T = sig
     type elt
-    effect Get : elt
-    effect Set : elt -> unit
+    exception%effect Get : elt
+    exception%effect Set : elt -> unit
   end
   type 'a t = (module T with type elt = 'a)
 
-  effect Ref : 'a -> 'a t
+  exception%effect Ref : 'a -> 'a t
   let ref v = perform (Ref v)
 
   let (!)  : type a. a t -> a =
@@ -32,14 +32,14 @@ module State : STATE = struct
     begin try
       f ()
     with
-    | effect (Ref init) k ->
+    | [%effect? (Ref init), k] ->
         (* trick to name the existential type introduced by the matching: *)
         (init, k) |> fun (type a) (init, k : a * (a t, _) continuation) ->
         let module R =
           struct
             type elt = a
-            effect Get : elt
-            effect Set : elt -> unit
+            exception%effect Get : elt
+            exception%effect Set : elt -> unit
           end
         in
         init |>
@@ -47,8 +47,8 @@ module State : STATE = struct
           continue k (module R)
         with
         | result             -> fun _x -> result
-        | effect  R.Get    k -> fun x -> continue k x  x
-        | effect (R.Set y) k -> fun _x -> continue k () y
+        | [%effect?  R.Get   , k] -> fun (x : a) -> continue k x  x
+        | [%effect? (R.Set y), k] -> fun _x -> continue k () y
         end
     end
 end

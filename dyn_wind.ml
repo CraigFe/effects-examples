@@ -7,7 +7,7 @@ let dynamic_wind before_thunk thunk after_thunk =
     match thunk () with
     | v -> v
     | exception e -> after_thunk (); raise e
-    | effect e k ->
+    | [%effect? e, k] ->
         after_thunk ();
         let res' = perform e in
         before_thunk ();
@@ -16,7 +16,7 @@ let dynamic_wind before_thunk thunk after_thunk =
   after_thunk ();
   res
 
-effect E : unit
+exception%effect E : unit
 
 let () =
   let bt () = Printf.printf "IN\n" in
@@ -27,4 +27,4 @@ let () =
     Printf.printf "done\n"
   in
   try dynamic_wind bt foo at with
-  | effect E k -> Printf.printf "handled E\n"; continue k ()
+  | [%effect? E, k] -> Printf.printf "handled E\n"; continue k ()

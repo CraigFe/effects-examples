@@ -9,16 +9,16 @@ module Int = struct type t = int let compare = compare end
 
 module LocalState (R : sig type t end) = struct
   type reff = R.t
-  effect New : int -> R.t
-  effect Get : R.t -> int
-  effect Put : R.t * int -> unit
+  exception%effect New : int -> R.t
+  exception%effect Get : R.t -> int
+  exception%effect Put : R.t * int -> unit
 end
 
 module type StateOps = sig
   type reff
-  effect New : int -> reff
-  effect Get : reff -> int
-  effect Put : reff * int -> unit
+  exception%effect New : int -> reff
+  exception%effect Get : reff -> int
+  exception%effect Put : reff * int -> unit
 end
 
 (**********************************************************************)
@@ -31,12 +31,12 @@ let run main =
   let module IM = Map.Make (Int) in
   let comp =
     match main (module Int : Type) with
-      | effect (S.New i) k ->
+      | [%effect? (S.New i), k] ->
           fun s -> let r = fst (IM.max_binding s) + 1
                    in continue k r (IM.add r i s) 
-      | effect (S.Get r) k ->
+      | [%effect? (S.Get r), k] ->
           fun s -> continue k (IM.find r s) s
-      | effect (S.Put (r, i)) k ->
+      | [%effect? (S.Put (r, i)), k] ->
           fun s -> continue k () (IM.add r i s)
       | x -> fun s -> x
   in
@@ -57,13 +57,13 @@ let run2 main =
   let module IM = Map.Make (Int) in
   let comp =
     match main (module S : StateOps) with
-      | effect (S.New i) k ->
+      | [%effect? (S.New i), k] ->
           fun s ->
             let r = if IM.is_empty s then 0 else fst (IM.max_binding s) + 1
             in continue k r (IM.add r i s) 
-      | effect (S.Get r) k ->
+      | [%effect? (S.Get r), k] ->
           fun s -> continue k (IM.find r s) s
-      | effect (S.Put (r, i)) k ->
+      | [%effect? (S.Put (r, i)), k] ->
           fun s -> continue k () (IM.add r i s)
       | x -> fun s -> x
   in
@@ -80,23 +80,23 @@ let main2 (module S : StateOps) =
    handlers. Similar to the example in "state.ml". *)
 module type GetPutOps = sig
   type t
-  effect Get : t
-  effect Put : t -> unit
+  exception%effect Get : t
+  exception%effect Put : t -> unit
 end
 
 module MakeGetPut (T : sig type t end) () = struct
   type t = T.t
-  effect Get : t
-  effect Put : t -> unit
+  exception%effect Get : t
+  exception%effect Put : t -> unit
 end
 
 let run3 (type a) (module S : GetPutOps with type t = a) (s : a) main =
   let module IM = Map.Make (Int) in
   let comp =
     match main () with
-      | effect S.Get k ->
+      | [%effect? S.Get, k] ->
           fun (s : S.t) -> continue k s s
-      | effect (S.Put i) k ->
+      | [%effect? (S.Put i), k] ->
           fun s -> continue k () i
       | x -> fun s -> x
   in
@@ -136,8 +136,8 @@ let test3 () =
    continuations. *)
 type 'a reff = < get : 'a; put : 'a -> unit; internals : (module GetPutOps with type t = 'a) >
 
-effect New : 'a -> 'a reff
-effect Choice : bool
+exception%effect New : 'a -> 'a reff
+exception%effect Choice : bool
 
 let run4 main =
   let donew : type a b. (a reff, b) continuation -> a -> b = fun k ->
@@ -149,13 +149,13 @@ let run4 main =
                  end
       in
       match continue k cell with
-        | effect Ops.Get      k -> fun s -> continue k s s
-        | effect (Ops.Put v)  k -> fun s -> continue k () v
+        | [%effect? Ops.Get     , k] -> fun (s : a) -> continue k s s
+        | [%effect? (Ops.Put v) , k] -> fun (s : a) -> continue k () v
         | x                     -> fun s -> x
   in
   match main () with
-    | effect (New v) k -> donew k v
-    | effect (Choice) k -> let k' = Obj.clone_continuation k in continue k true; continue k' false
+    | [%effect? (New v), k] -> donew k v
+    | [%effect? (Choice), k] -> let k' = k (* XXX: clone_continuation unsupported *) in continue k true; continue k' false
     | x                -> x
 
 let newref i = perform (New i)

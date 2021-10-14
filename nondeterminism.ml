@@ -3,7 +3,7 @@
 
 (* Non-determinism is an effect given by an operation Choose, that
    returns a boolean. *)
-effect Choose : bool
+exception%effect Choose : bool
 let choose () = perform Choose
 
 (* An example non-deterministic computation: A coin toss *)
@@ -17,7 +17,7 @@ let toss () =
 let make_charged_handler (b : bool) =
   fun m ->
   try m () with
-  | effect Choose k -> continue k b
+  | [%effect? Choose, k] -> continue k b
 
 let positive = make_charged_handler true  (* always interpret as true *)
 let negative = make_charged_handler false (* always interpret as false *)
@@ -27,8 +27,8 @@ let negative = make_charged_handler false (* always interpret as false *)
 let all_results m =
   match m () with
   | v -> [v]
-  | effect Choose k ->
-     (continue k true) @ (continue (Obj.clone_continuation k) false)
+  | [%effect? Choose, k] ->
+     (continue k true) @ (continue (k (* XXX: clone continuation not supported *)) false)
 (* OCaml effects/multicore only supports single-shot
    continuations. But, we can simulate multi-shot continuations by
    copying a continuation (using Obj.clone) before invocation. *)
@@ -36,7 +36,7 @@ let all_results m =
 (* Random interpretation *)
 let coin m =
   try m () with
-  | effect Choose k -> continue k (Random.float 1.0 > 0.5)
+  | [%effect? Choose, k] -> continue k (Random.float 1.0 > 0.5)
 
 (* Another example: A drunken coin toss. A drunkard may fail to catch
 the coin. *)

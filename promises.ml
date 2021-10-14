@@ -28,8 +28,8 @@ module Promise : Promise = struct
 
   type 'a t = 'a status ref
 
-  effect Fork : (unit -> 'a) -> 'a t
-  effect Wait : 'a t -> unit
+  exception%effect Fork : (unit -> 'a) -> 'a t
+  exception%effect Wait : 'a t -> unit
 
   let fork f = perform (Fork f)
 
@@ -112,8 +112,8 @@ module Promise : Promise = struct
         match f () with
         | v -> finish run_q sr v; dequeue run_q
         | exception e -> abort run_q sr e; dequeue run_q
-        | effect (Wait sr) k -> wait sr k; dequeue run_q
-        | effect (Fork f) k ->
+        | [%effect? (Wait sr), k] -> wait sr k; dequeue run_q
+        | [%effect? (Fork f), k] ->
             let sr = mk_status () in
             enqueue run_q k sr; spawn sr f
     in

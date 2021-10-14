@@ -10,19 +10,19 @@ let string_of_msg = function
 (** Process primitives **)
 type pid = int
 
-effect Spawn : (pid -> unit) -> pid
+exception%effect Spawn : (pid -> unit) -> pid
 let spawn p = perform (Spawn p)
 
-effect Yield : unit
+exception%effect Yield : unit
 let yield () = perform Yield
 
 (** Communication primitives **)
-effect Send : pid * message -> unit
+exception%effect Send : pid * message -> unit
 let send pid data =
   perform (Send (pid, data));
   yield ()
 
-effect Recv : pid -> message option
+exception%effect Recv : pid -> message option
 let rec recv pid =
   match perform (Recv pid) with
   | Some m -> m
@@ -74,10 +74,10 @@ let mailbox f =
   in
   match f () with
   | v -> v
-  | effect (Send (pid, msg)) k ->
+  | [%effect? (Send (pid, msg)), k] ->
      mailbox := Mailbox.push pid msg !mailbox;
      continue k ()
-  | effect (Recv who) k ->
+  | [%effect? (Recv who), k] ->
      let msg = lookup who in
      continue k msg
 
@@ -95,9 +95,9 @@ let run main () =
     pid := 1 + !pid;
     match f !pid with
     | () -> dequeue ()
-    | effect Yield k ->
+    | [%effect? Yield, k] ->
        enqueue (fun () -> continue k ()); dequeue ()
-    | effect (Spawn p) k ->
+    | [%effect? (Spawn p), k] ->
        enqueue (fun () -> continue k !pid); spawn p
   in
   spawn main

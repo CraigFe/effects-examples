@@ -19,7 +19,7 @@ module Memo : sig
 
 end = struct
 
-  effect Cut : unit
+  exception%effect Cut : unit
   let cut () = perform Cut
 
   type ('a,'b) cache_entry =
@@ -37,11 +37,11 @@ end = struct
             cache := Some {input = x; cont = fun () -> failwith err_msg};
             f x
       with
-      | effect Cut k ->
+      | [%effect? Cut, k] ->
           match !cache with
           | Some c ->
               let rec save_cont k () =
-                c.cont <- save_cont (Obj.clone_continuation k);
+                c.cont <- save_cont (k (* XXX: clone_continuation not supported *));
                 continue k ()
               in
               save_cont k ()

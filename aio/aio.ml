@@ -10,12 +10,12 @@ type file_descr = Unix.file_descr
 type sockaddr = Unix.sockaddr
 type msg_flag = Unix.msg_flag
 
-effect Fork  : (unit -> unit) -> unit
-effect Yield : unit
-effect Accept : file_descr -> (file_descr * sockaddr)
-effect Recv : file_descr * bytes * int * int * msg_flag list -> int
-effect Send : file_descr * bytes * int * int * msg_flag list -> int
-effect Sleep : float -> unit
+exception%effect Fork  : (unit -> unit) -> unit
+exception%effect Yield : unit
+exception%effect Accept : file_descr -> (file_descr * sockaddr)
+exception%effect Recv : file_descr * bytes * int * int * msg_flag list -> int
+exception%effect Send : file_descr * bytes * int * int * msg_flag list -> int
+exception%effect Sleep : float -> unit
 
 let fork f =
   perform (Fork f)
@@ -170,13 +170,13 @@ let run main =
     | exception exn ->
         print_string (Printexc.to_string exn);
         schedule st
-    | effect Yield  k ->
+    | [%effect? Yield , k] ->
         enqueue_thread st k ();
         schedule st
-    | effect (Fork f) k ->
+    | [%effect? (Fork f), k] ->
         enqueue_thread st k ();
         fork st f
-    | effect (Accept fd) k ->
+    | [%effect? (Accept fd), k] ->
         if poll_rd fd then begin
           let res = Unix.accept fd in
           continue k res
@@ -184,7 +184,7 @@ let run main =
           block_accept st fd k;
           schedule st
         end
-    | effect (Recv (fd, buf, pos, len, mode)) k ->
+    | [%effect? (Recv (fd, buf, pos, len, mode)), k] ->
         if poll_rd fd then begin
           let res = Unix.recv fd buf pos len mode in
           continue k res
@@ -192,7 +192,7 @@ let run main =
           block_recv st fd buf pos len mode k;
           schedule st
         end
-    | effect (Send (fd, buf, pos, len, mode)) k ->
+    | [%effect? (Send (fd, buf, pos, len, mode)), k] ->
         if poll_wr fd then begin
           let res = Unix.send fd buf pos len mode in
           continue k res
@@ -200,7 +200,7 @@ let run main =
           block_send st fd buf pos len mode k;
           schedule st
         end
-    | effect (Sleep t) k ->
+    | [%effect? (Sleep t), k] ->
         if t <= 0. then continue k ()
         else begin
           block_sleep st t k;

@@ -25,7 +25,7 @@ let string_of_player = function
 (* The [move] operation is centric to the game. The operation is
 parameterised by the active player and the number of sticks left in
 the game. *)
-effect Move : (player * int) ->	int
+exception%effect Move : (player * int) ->	int
 let move p n = perform (Move (p, n))
 
 (* The game is modelled as two mutually recursive functions *)
@@ -48,7 +48,7 @@ let strategy (s : player -> (int -> (int, player) continuation -> player)) m =
   try
     m ()
   with
-  | effect (Move (p,n)) k -> s p n k
+  | [%effect? (Move (p,n)), k] -> s p n k
 
 (* Simple (and naive) strategy *)
 let ns _ k = continue k 1
@@ -129,7 +129,7 @@ let reify p n k =
 let gametree m =
   match m () with
   | v -> Winner v
-  | effect (Move (p,n)) k -> reify p n k
+  | [%effect? (Move (p,n)), k] -> reify p n k
 
 (** Cheat detection via effect forwarding **)
 (* We model Cheat as an exception parameterised by the player (the
@@ -153,7 +153,7 @@ let check_move p n k =
 
 let checker m =
   try m () with
-  | effect (Move (p,n)) k -> check_move p n k
+  | [%effect? (Move (p,n)), k] -> check_move p n k
 
 (* The following exception handler reports cheaters *)
 let cheat_report m =
@@ -171,14 +171,14 @@ let cheat_lose m =
 let (-<-) h g = fun m -> h (fun () -> g m)
 
 (** Choosing between strategies **)
-effect Choose : bool
+exception%effect Choose : bool
 let choose () = perform Choose
 
 (* Flip a coin to decide whether to interpret Choose as true or
 false *)
 let coin m =
   try m () with
-  | effect Choose k -> continue k (Random.float 1.0 > 0.5)
+  | [%effect? Choose, k] -> continue k (Random.float 1.0 > 0.5)
 
 let bob_maybe_cheats m =
   let h = if choose ()
@@ -203,18 +203,18 @@ end
 module State (S : sig type t end) : STATE with type t = S.t = struct
   type t = S.t
 
-  effect Put : t -> unit
+  exception%effect Put : t -> unit
   let put v = perform (Put v)
 
-  effect Get : t
+  exception%effect Get : t
   let get () = perform Get
 
   let run f ~init =
     let comp =
       match f () with
       | x -> (fun s -> x)
-      | effect (Put s') k -> (fun s -> continue k () s')
-      | effect Get k      -> (fun s -> continue k s s)
+      | [%effect? (Put s'), k] -> (fun s -> continue k () s')
+      | [%effect? Get, k]      -> (fun (s : t) -> continue k s s)
     in comp init
 end
 

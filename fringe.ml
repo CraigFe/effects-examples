@@ -23,7 +23,7 @@ module SameFringe(E : EQUATABLE) = struct
   type nonrec tree = E.t tree
 
   (* Yielding control *)
-  effect Yield : E.t -> unit
+  exception%effect Yield : E.t -> unit
   let yield e = perform (Yield e)
 
   (* The walk routine *)
@@ -41,7 +41,7 @@ module SameFringe(E : EQUATABLE) = struct
   let step f =
     match f () with
     | _ -> Done
-    | effect (Yield e) k -> Yielded (e, k)
+    | [%effect? (Yield e), k] -> Yielded (e, k)
 
   (* The comparator "step walks" two given trees simultaneously *)
   let comparator ltree rtree =

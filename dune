@@ -2,79 +2,147 @@
  (dev
   (flags (:standard -w -50 -w -32 -w -27))))
 
+(library
+ (name import)
+ (modules import))
+
 (executables
  (names concurrent)
- (modules sched concurrent))
+ (modules sched concurrent)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names state)
- (modules state))
+ (modules state)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
+
+(executables
+ (names dynamic_state)
+ (modules dynamic_state)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names ref)
- (modules ref))
+ (modules ref)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names transaction)
- (modules transaction))
+ (modules transaction)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names delimcc)
- (modules delimcc))
+ (modules delimcc)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names dyn_wind)
- (modules dyn_wind))
+ (modules dyn_wind)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names generator)
- (modules generator))
+ (modules generator)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names promises)
- (modules promises))
+ (modules promises)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names queens)
- (modules queens))
+ (modules queens)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names reify_reflect)
- (modules reify_reflect))
+ (modules reify_reflect)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names memo)
- (modules memo))
+ (modules memo)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names nondeterminism)
- (modules nondeterminism))
+ (modules nondeterminism)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names nim)
- (modules nim))
+ (modules nim)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names eratosthenes)
- (modules eratosthenes))
+ (modules eratosthenes)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names pipes)
- (modules pipes))
+ (modules pipes)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names loop)
- (modules loop))
+ (modules loop)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names clone_is_tricky)
- (modules clone_is_tricky))
+ (modules clone_is_tricky)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names fringe)
- (modules fringe))
+ (modules fringe)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
 (executables
  (names algorithmic_differentiation)
- (modules algorithmic_differentiation))
+ (modules algorithmic_differentiation)
+ (preprocess (pps ppx_effects))
+ (libraries import)
+ (flags (:standard -open Import)))
 
